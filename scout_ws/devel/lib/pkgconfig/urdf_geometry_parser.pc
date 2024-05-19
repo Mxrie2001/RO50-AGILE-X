@@ -1,0 +1,8 @@
+prefix=/home/hugoc/scout_ws/devel
+
+Name: urdf_geometry_parser
+Description: Description of urdf_geometry_parser
+Version: 0.1.0
+Cflags: -I/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/urdf_geometry_parser/include
+Libs: -L${prefix}/lib -lurdf_geometry_parser
+Requires: roscpp urdf

@@ -1,0 +1,8 @@
+prefix=/home/hugoc/scout_ws/install
+
+Name: rambler
+Description: Description of rambler
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

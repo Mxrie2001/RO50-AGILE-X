@@ -1,0 +1,8 @@
+prefix=/home/hugoc/scout_ws/install
+
+Name: limo_s2_arm
+Description: Description of limo_s2_arm
+Version: 1.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

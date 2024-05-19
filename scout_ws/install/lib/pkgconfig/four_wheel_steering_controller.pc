@@ -1,0 +1,8 @@
+prefix=/home/hugoc/scout_ws/install
+
+Name: four_wheel_steering_controller
+Description: Description of four_wheel_steering_controller
+Version: 0.17.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib -lfour_wheel_steering_controller
+Requires: controller_interface nav_msgs four_wheel_steering_msgs realtime_tools tf urdf_geometry_parser pluginlib

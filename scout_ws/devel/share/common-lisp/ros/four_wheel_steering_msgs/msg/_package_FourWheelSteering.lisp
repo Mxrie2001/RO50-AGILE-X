@@ -1,0 +1,16 @@
+(cl:in-package four_wheel_steering_msgs-msg)
+(cl:export '(FRONT_STEERING_ANGLE-VAL
+          FRONT_STEERING_ANGLE
+          REAR_STEERING_ANGLE-VAL
+          REAR_STEERING_ANGLE
+          FRONT_STEERING_ANGLE_VELOCITY-VAL
+          FRONT_STEERING_ANGLE_VELOCITY
+          REAR_STEERING_ANGLE_VELOCITY-VAL
+          REAR_STEERING_ANGLE_VELOCITY
+          SPEED-VAL
+          SPEED
+          ACCELERATION-VAL
+          ACCELERATION
+          JERK-VAL
+          JERK
+))

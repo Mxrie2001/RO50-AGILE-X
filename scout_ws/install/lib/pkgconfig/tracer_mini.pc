@@ -1,0 +1,8 @@
+prefix=/home/hugoc/scout_ws/install
+
+Name: tracer_mini
+Description: Description of tracer_mini
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

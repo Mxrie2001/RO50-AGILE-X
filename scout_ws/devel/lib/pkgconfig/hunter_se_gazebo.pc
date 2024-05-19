@@ -1,0 +1,8 @@
+prefix=/home/hugoc/scout_ws/devel
+
+Name: hunter_se_gazebo
+Description: Description of hunter_se_gazebo
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
