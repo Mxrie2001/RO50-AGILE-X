@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="odom_moving" name="odom_moving" type="odom_moving.py">
+    <param name="distance" value="2"/>
+  </node>
+
+<!-- include file="$(find camera)/launch/camera.launch" / -->
+<include file="$(find pedestrian_detection)/launch/pedestrian_detection.launch" />
+</launch>

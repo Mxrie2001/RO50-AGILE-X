@@ -1,0 +1,8 @@
+prefix=/home/hugoc/RO50_project_ws/devel
+
+Name: emergency_stop
+Description: Description of emergency_stop
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
