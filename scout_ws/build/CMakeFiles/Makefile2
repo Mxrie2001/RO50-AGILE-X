@@ -74,6 +74,7 @@ all: ugv_sim/bunker/bunker_gazebo_sim/all
 all: camera/all
 all: ugv_sim/limo/limo_gazebo_sim/all
 all: ugv_sim/limo_s2/limo_s2_gazebo_sim/all
+all: pedestrian_detection/all
 all: rambler/all
 all: ugv_sim/scout/scout_gazebo_sim/all
 all: ugv_sim/hunter/hunter2_gazebo/all
@@ -124,6 +125,7 @@ preinstall: ugv_sim/bunker/bunker_gazebo_sim/preinstall
 preinstall: camera/preinstall
 preinstall: ugv_sim/limo/limo_gazebo_sim/preinstall
 preinstall: ugv_sim/limo_s2/limo_s2_gazebo_sim/preinstall
+preinstall: pedestrian_detection/preinstall
 preinstall: rambler/preinstall
 preinstall: ugv_sim/scout/scout_gazebo_sim/preinstall
 preinstall: ugv_sim/hunter/hunter2_gazebo/preinstall
@@ -179,6 +181,7 @@ clean: ugv_sim/bunker/bunker_gazebo_sim/clean
 clean: camera/clean
 clean: ugv_sim/limo/limo_gazebo_sim/clean
 clean: ugv_sim/limo_s2/limo_s2_gazebo_sim/clean
+clean: pedestrian_detection/clean
 clean: rambler/clean
 clean: ugv_sim/scout/scout_gazebo_sim/clean
 clean: ugv_sim/hunter/hunter2_gazebo/clean
@@ -362,6 +365,24 @@ odom_moving/clean: odom_moving/CMakeFiles/actionlib_msgs_generate_messages_eus.d
 odom_moving/clean: odom_moving/CMakeFiles/geometry_msgs_generate_messages_nodejs.dir/clean
 
 .PHONY : odom_moving/clean
+
+#=============================================================================
+# Directory level rules for directory pedestrian_detection
+
+# Recursive "all" directory target.
+pedestrian_detection/all:
+
+.PHONY : pedestrian_detection/all
+
+# Recursive "preinstall" directory target.
+pedestrian_detection/preinstall:
+
+.PHONY : pedestrian_detection/preinstall
+
+# Recursive "clean" directory target.
+pedestrian_detection/clean:
+
+.PHONY : pedestrian_detection/clean
 
 #=============================================================================
 # Directory level rules for directory rambler

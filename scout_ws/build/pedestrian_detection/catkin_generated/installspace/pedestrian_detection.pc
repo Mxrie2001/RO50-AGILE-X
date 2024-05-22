@@ -1,0 +1,8 @@
+prefix=/home/hugoc/scout_ws/install
+
+Name: pedestrian_detection
+Description: Description of pedestrian_detection
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

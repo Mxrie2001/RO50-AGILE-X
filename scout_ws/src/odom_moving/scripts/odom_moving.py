@@ -20,7 +20,7 @@ def odomCallback(odom_msg):
     
     if step_ == 0:
         odom_msg_old_ = odom_msg
-        twist_msg_.linear.x = 0.2
+        twist_msg_.linear.x = 1.5
         moving_pub_.publish(twist_msg_)
         step_ = 1
     elif step_ == 1:  # forward

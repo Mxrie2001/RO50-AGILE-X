@@ -271,6 +271,13 @@
 /home/hugoc/scout_ws/build/ugv_sim/limo_s2/limo_s2_gazebo_sim/CMakeFiles/rebuild_cache.dir
 /home/hugoc/scout_ws/build/ugv_sim/limo_s2/limo_s2_gazebo_sim/CMakeFiles/edit_cache.dir
 /home/hugoc/scout_ws/build/ugv_sim/limo_s2/limo_s2_gazebo_sim/CMakeFiles/test.dir
+/home/hugoc/scout_ws/build/pedestrian_detection/CMakeFiles/install/strip.dir
+/home/hugoc/scout_ws/build/pedestrian_detection/CMakeFiles/install/local.dir
+/home/hugoc/scout_ws/build/pedestrian_detection/CMakeFiles/install.dir
+/home/hugoc/scout_ws/build/pedestrian_detection/CMakeFiles/list_install_components.dir
+/home/hugoc/scout_ws/build/pedestrian_detection/CMakeFiles/rebuild_cache.dir
+/home/hugoc/scout_ws/build/pedestrian_detection/CMakeFiles/edit_cache.dir
+/home/hugoc/scout_ws/build/pedestrian_detection/CMakeFiles/test.dir
 /home/hugoc/scout_ws/build/rambler/CMakeFiles/install/strip.dir
 /home/hugoc/scout_ws/build/rambler/CMakeFiles/install/local.dir
 /home/hugoc/scout_ws/build/rambler/CMakeFiles/install.dir

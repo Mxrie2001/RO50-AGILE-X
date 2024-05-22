@@ -3,5 +3,6 @@
     <param name="distance" value="2"/>
   </node>
 
-<include file="$(find camera)/launch/camera.launch" />
+<!-- include file="$(find camera)/launch/camera.launch" / -->
+<include file="$(find pedestrian_detection)/launch/pedestrian_detection.launch" />
 </launch>

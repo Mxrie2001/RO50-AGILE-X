@@ -24,7 +24,7 @@ add_custom_target(_four_wheel_steering_msgs_generate_messages_check_deps_${_file
 
 get_filename_component(_filename "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteeringStamped.msg" NAME_WE)
 add_custom_target(_four_wheel_steering_msgs_generate_messages_check_deps_${_filename}
-  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "four_wheel_steering_msgs" "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteeringStamped.msg" "std_msgs/Header:four_wheel_steering_msgs/FourWheelSteering"
+  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "four_wheel_steering_msgs" "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteeringStamped.msg" "four_wheel_steering_msgs/FourWheelSteering:std_msgs/Header"
 )
 
 #
@@ -42,7 +42,7 @@ _generate_msg_cpp(four_wheel_steering_msgs
 _generate_msg_cpp(four_wheel_steering_msgs
   "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteeringStamped.msg"
   "${MSG_I_FLAGS}"
-  "/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteering.msg"
+  "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteering.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg"
   ${CATKIN_DEVEL_PREFIX}/${gencpp_INSTALL_DIR}/four_wheel_steering_msgs
 )
 
@@ -83,7 +83,7 @@ _generate_msg_eus(four_wheel_steering_msgs
 _generate_msg_eus(four_wheel_steering_msgs
   "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteeringStamped.msg"
   "${MSG_I_FLAGS}"
-  "/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteering.msg"
+  "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteering.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg"
   ${CATKIN_DEVEL_PREFIX}/${geneus_INSTALL_DIR}/four_wheel_steering_msgs
 )
 
@@ -124,7 +124,7 @@ _generate_msg_lisp(four_wheel_steering_msgs
 _generate_msg_lisp(four_wheel_steering_msgs
   "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteeringStamped.msg"
   "${MSG_I_FLAGS}"
-  "/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteering.msg"
+  "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteering.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg"
   ${CATKIN_DEVEL_PREFIX}/${genlisp_INSTALL_DIR}/four_wheel_steering_msgs
 )
 
@@ -165,7 +165,7 @@ _generate_msg_nodejs(four_wheel_steering_msgs
 _generate_msg_nodejs(four_wheel_steering_msgs
   "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteeringStamped.msg"
   "${MSG_I_FLAGS}"
-  "/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteering.msg"
+  "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteering.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg"
   ${CATKIN_DEVEL_PREFIX}/${gennodejs_INSTALL_DIR}/four_wheel_steering_msgs
 )
 
@@ -206,7 +206,7 @@ _generate_msg_py(four_wheel_steering_msgs
 _generate_msg_py(four_wheel_steering_msgs
   "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteeringStamped.msg"
   "${MSG_I_FLAGS}"
-  "/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteering.msg"
+  "/home/hugoc/scout_ws/src/ugv_sim/ranger_mini_V2/four_wheel_steering_msgs/msg/FourWheelSteering.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg"
   ${CATKIN_DEVEL_PREFIX}/${genpy_INSTALL_DIR}/four_wheel_steering_msgs
 )
 
