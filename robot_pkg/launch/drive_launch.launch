@@ -1,7 +1,0 @@
-<launch>
-  <node pkg="odom_moving" name="odom_moving" type="odom_moving">
-    <param name="distance" value="0.5"/>
-  </node>
-  
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find odom_moving)/launch/odom_moving.rviz"/>
-</launch>
