@@ -1,2 +1,0 @@
-/usr/bin/ar qc /home/hugoc/scout_ws/devel/lib/libtracer_gazebo.a  CMakeFiles/tracer_gazebo.dir/src/tracer_skid_steer.cpp.o
-/usr/bin/ranlib /home/hugoc/scout_ws/devel/lib/libtracer_gazebo.a

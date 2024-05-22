@@ -1,8 +1,0 @@
-prefix=/home/hugoc/scout_ws/devel
-
-Name: odom_moving
-Description: Description of odom_moving
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

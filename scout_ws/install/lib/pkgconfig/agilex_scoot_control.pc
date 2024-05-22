@@ -1,8 +1,0 @@
-prefix=/home/hugoc/scout_ws/install
-
-Name: agilex_scoot_control
-Description: Description of agilex_scoot_control
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

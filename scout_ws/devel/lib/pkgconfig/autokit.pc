@@ -1,8 +1,0 @@
-prefix=/home/hugoc/scout_ws/devel
-
-Name: autokit
-Description: Description of autokit
-Version: 1.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

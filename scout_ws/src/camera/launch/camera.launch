@@ -1,3 +1,0 @@
-<launch>
-  <node name="camera" pkg="camera" type="obstacle_detector.py" output="screen"/>
-</launch>
