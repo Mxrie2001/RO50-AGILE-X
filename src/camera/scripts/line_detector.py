@@ -1,89 +1,33 @@
 #!/usr/bin/env python3
 
 import rospy
-import math
 import cv2
 import numpy as np
-from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist
-from std_msgs.msg import Int32, String
 from sensor_msgs.msg import Image
+from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge, CvBridgeError
+from std_msgs.msg import Int32
 
-
-#need to use odom_moving_turtlebot.launch with turtlebot for rviz
-
-class Odom:
+class LineDetector:
     def __init__(self):
-
         self.rate = rospy.Rate(10)  # 10 Hz
         self.bridge = CvBridge()
 
-        self.step_ = 0
-        self.odom_msg_old_ = None
-        self.twist_msg_ = Twist()
-
-        # Publishers
-        self.moving_pub_ = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
-        
-        # Subscribers
-        rospy.Subscriber('/odom', Odometry, self.odomCallback)
-        rospy.Subscriber('/emergency_brake', Int32, self.emergencyBrakeCallback) #trigger subscriber
-        rospy.Subscriber('/emergency_brake_reason', String, self.emergencyBrakeReasonCallback) #reason subscriber
+        # Subscribe to color image topic
         self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.image_callback)
 
+        self.cmd_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+
+        rospy.loginfo("Line Detector Initialized")
         self.rate.sleep()
-    
-    def odomCallback(self, odom_msg):        
-        if self.step_ == 0:
-            rospy.loginfo("calibrage")
-        elif self.step_ == 1:
-            self.odom_msg_old_ = odom_msg
-            self.twist_msg_.linear.x = 1.0
-            self.moving_pub_.publish(self.twist_msg_)
-            self.step_ = 2
-        elif self.step_ == 2:  # forward
-            dist_ = odom_msg.twist.twist.linear.x * (odom_msg.header.stamp.to_sec() - self.odom_msg_old_.header.stamp.to_sec())
-            self.moving_pub_.publish(self.twist_msg_)
-            if dist_ >= 6.5:
-                self.twist_msg_.linear.x = 0.0
-                self.moving_pub_.publish(self.twist_msg_)
-                self.step_ = 3
-        elif self.step_ == 3:
-            self.odom_msg_old_ = odom_msg
-            self.twist_msg_.angular.z = 0.2
-            self.moving_pub_.publish(self.twist_msg_)
-            self.step_ = 4
-        elif self.step_ == 4:  # turn
-            angle_ = odom_msg.twist.twist.angular.z * (odom_msg.header.stamp.to_sec() - self.odom_msg_old_.header.stamp.to_sec())
-            self.moving_pub_.publish(self.twist_msg_)
-            if angle_ >= math.pi:
-                self.twist_msg_.angular.z = 0.0  
-                self.moving_pub_.publish(self.twist_msg_)
-                self.step_ = 0
 
-    #trigger callback
-    def emergencyBrakeCallback(self, msg):
-        #message received from /emergency_brake topic
-        if msg.data != 0:
-            rospy.loginfo("Emergency brake signal received. Stopping the robot.")
-            self.twist_msg_.linear.x = 0.0
-            self.twist_msg_.angular.z = 0.0
-            self.moving_pub_.publish(self.twist_msg_)
-
-    #reason callback
-    def emergencyBrakeReasonCallback(self, msg):
-        emergency_brake_reason_ = msg.data
-        rospy.loginfo("Braking reason: %s", emergency_brake_reason_)
-    
     def image_callback(self, color_data):
-        if(self.step_ == 0):
-            try:
-                color_image = self.bridge.imgmsg_to_cv2(color_data, "bgr8")
-                self.process_image(color_image)
-                rospy.loginfo("Color image shape: %s", color_image.shape)
-            except CvBridgeError as e:
-                rospy.logerr("CvBridge Error: {0}".format(e))
+        try:
+            color_image = self.bridge.imgmsg_to_cv2(color_data, "bgr8")
+            self.process_image(color_image)
+            rospy.loginfo("Color image shape: %s", color_image.shape)
+        except CvBridgeError as e:
+            rospy.logerr("CvBridge Error: {0}".format(e))
 
     def process_image(self, color_image):
         self.detect_lines(color_image)
@@ -169,12 +113,6 @@ class Odom:
 
     def control_robot(self, mid_x, image_center_x):
         error = mid_x - image_center_x
-        rospy.loginfo(error)
-
-        if(error < 1 and error > -1):
-            rospy.loginfo("error mini")
-            self.step_ = 1
-            return
 
         # Proportional control for centering the robot
         k_p = 0.01  # Proportional gain
@@ -182,20 +120,26 @@ class Odom:
         #twist.linear.x = 0.2  # Constant forward speed
         twist.angular.z = -k_p * error  # Adjust angular speed based on the error
 
-        self.moving_pub_.publish(twist)
+        rospy.loginfo(error)
+
+        self.cmd_pub.publish(twist)
         rospy.loginfo("Control command published: linear.x = %.2f, angular.z = %.2f", twist.linear.x, twist.angular.z)
     
     def turn_right(self):
         twist = Twist()
         twist.angular.z = -0.1
-        self.moving_pub_.publish(twist)
+        self.cmd_pub.publish(twist)
     
     def turn_left(self):
         twist = Twist()
         twist.angular.z = 0.1
-        self.moving_pub_.publish(twist)
+        self.cmd_pub.publish(twist)
 
 if __name__ == '__main__':
-    rospy.init_node('odom_moving')
-    odom = Odom()
-    rospy.spin()
+    rospy.init_node('line_detector', anonymous=True)
+    detector = LineDetector()
+    try:
+        rospy.spin()
+    except KeyboardInterrupt:
+        rospy.loginfo("Shutting down")
+    cv2.destroyAllWindows()
