@@ -7,11 +7,11 @@ from sensor_msgs.msg import Image, LaserScan
 from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import Int32, Float32MultiArray
-from scipy.ndimage import median_filter
 from message_filters import Subscriber, ApproximateTimeSynchronizer
 from visualization_msgs.msg import Marker, MarkerArray
 import os
 from imutils.object_detection import non_max_suppression
+import threading
 
 class ObstacleDetector:
     def __init__(self):
@@ -19,6 +19,18 @@ class ObstacleDetector:
         self.bridge = CvBridge()
 
         self.boxes = []
+        self.depth_image = None
+        self.processing_image = False
+
+        # Load YOLO
+        self.net = cv2.dnn.readNet("/home/hugoc/yolov3-tiny.weights", "/home/hugoc/RO50_project_ws/src/camera/scripts/yolov3-tiny.cfg")
+        with open("/home/hugoc/RO50_project_ws/src/camera/scripts/coco.names", "r") as f:
+            self.classes = [line.strip() for line in f.readlines()]
+
+        layer_names = self.net.getLayerNames()
+        self.output_layers = [layer_names[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
+
+        self.processing_thread = None
 
         # Use message_filters to subscribe to color and depth image topics
         self.image_sub = Subscriber("/camera/color/image_raw", Image)
@@ -33,18 +45,9 @@ class ObstacleDetector:
         self.brake_pub = rospy.Publisher('/emergency_brake', Int32, queue_size=1)
         self.human_pub = rospy.Publisher('/human_distances', Float32MultiArray, queue_size=1)
         self.lidar_pub = rospy.Publisher('/lidar_detection', Float32MultiArray, queue_size=1)
+        self.lidar_pub_2 = rospy.Publisher('/lidar_pedestrian_stop', Int32, queue_size=1)
 
-        # Load YOLO
-        self.net = cv2.dnn.readNet("/home/hugoc/yolov3.weights", "/home/hugoc/RO50_project_ws/src/camera/scripts/yolov3.cfg")
-        with open("/home/hugoc/RO50_project_ws/src/camera/scripts/coco.names", "r") as f:
-            self.classes = [line.strip() for line in f.readlines()]
-
-        layer_names = self.net.getLayerNames()
-        self.output_layers = [layer_names[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
-        
-        self.depth_image = None
-
-        # rospy.loginfo("Obstacle and Pedestrian Detector Initialized")
+        rospy.loginfo("Obstacle and Pedestrian Detector Initialized")
         self.rate.sleep()
 
     def synced_callback(self, color_data, depth_data, lidar_data):
@@ -60,14 +63,19 @@ class ObstacleDetector:
                 pass  # No scaling needed for 32-bit float encoding
 
             self.depth_image = depth_image_cv
-            self.process_image_depth()
+
+            # Process LIDAR data immediately
             self.process_lidar(lidar_data)
-            self.detect_humans(color_image)
+
+            # Start image processing in a separate thread if not already processing
+            if not self.processing_image:
+                self.processing_image = True
+                self.processing_thread = threading.Thread(target=self.detect_humans, args=(color_image,))
+                self.processing_thread.start()
 
         except CvBridgeError as e:
             rospy.logerr("CvBridge Error: {0}".format(e))
-    
-    
+
     def save_image(self, image, image_path):
         # Save the RGB image with detections
         save_filename = image_path
@@ -79,7 +87,9 @@ class ObstacleDetector:
             # Detect obstacles within 2 meters
             self.depth_image = self.depth_image[:, 104:744]
             self.depth_image = np.where(self.depth_image < 0.5, 10, self.depth_image)
-            self.depth_image = median_filter(self.depth_image, size=3)
+            depth_image_uint8 = (self.depth_image * 255).astype(np.uint8)
+            depth_image_blurred = cv2.medianBlur(depth_image_uint8, 3)
+            self.depth_image = depth_image_blurred.astype(np.float32)/255.0
             self.depth_image[self.depth_image < 0.5] = 10
 
             save_filter_image = (self.depth_image * 25).astype(np.uint8)
@@ -105,22 +115,31 @@ class ObstacleDetector:
         filtered_ranges[filtered_ranges <= 0] = 100
 
         distance_threshold = 0.2  # Distance threshold for clustering in meters
-        target_distance = 4.0     # Target distance for pedestrian detection
+        target_distance = 5     # Target distance for pedestrian detection
 
         # Check for any object within 1 meter
         if np.any(filtered_ranges <= 1):
             rospy.loginfo("Obstacle detected within 1 meter! Stopping the robot.")
             self.stop_robot()
             return  # Exit the function early to immediately stop the robot
-        
+            
         clusters = self.euclidean_clustering(filtered_ranges, angle_increment, distance_threshold)
         
         min_size = 3   # Minimum number of points in a cluster to be considered a pedestrian
         max_size = 50  # Maximum number of points in a cluster to be considered a pedestrian
         pedestrian_clusters = self.detect_pedestrians(clusters, min_size, max_size, target_distance, distance_threshold)
+        pedestrian_clusters_2 = self.detect_pedestrians(clusters, min_size, max_size, 2.8, distance_threshold)
+
+        # Check for any object within 2.8 meter
+        pedestrian_close = 0
+        for pedestrian_cluster in pedestrian_clusters_2 :
+            if pedestrian_cluster[1] <= 2.8 :
+                pedestrian_close = 1
+        self.lidar_pub_2.publish(pedestrian_close)  
 
         array_msg = Float32MultiArray()
         distances = []
+
         if pedestrian_clusters and len(self.boxes) > 0:
             for pedestrian_cluster in pedestrian_clusters:
                 distances.append(pedestrian_cluster[1])
@@ -132,7 +151,6 @@ class ObstacleDetector:
             array_msg.data = []
         self.lidar_pub.publish(array_msg)
         self.rate.sleep()
-
 
     def euclidean_clustering(self, ranges, angle_increment, distance_threshold):
         clusters = []
@@ -160,7 +178,7 @@ class ObstacleDetector:
                 if abs(mean_distance - target_distance) <= distance_threshold:
                     pedestrian_clusters.append((cluster, mean_distance))
         return pedestrian_clusters
-    
+
     def detect_box_hog(self, image):
         hog = cv2.HOGDescriptor()
         hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
@@ -196,7 +214,7 @@ class ObstacleDetector:
                 scores = detection[5:]
                 class_id = np.argmax(scores)
                 confidence = scores[class_id]
-                if confidence > 0.3 and class_id == 0:  # Only detecting humans (class_id == 0 for person)
+                if confidence > 0.15 and class_id == 0:  # Only detecting humans (class_id == 0 for person)
                     center_x = int(detection[0] * width)
                     center_y = int(detection[1] * height)
                     w = int(detection[2] * width)
@@ -215,7 +233,6 @@ class ObstacleDetector:
         for i in range(len(self.boxes)):
             if i in indexes and w > 5 and h > 5 and y > 0 and x > 0:
                 box_temp.append(self.boxes[i])
-        self.boxes=[]
         self.boxes = box_temp        
 
     def detect_humans_distance(self):
@@ -242,13 +259,12 @@ class ObstacleDetector:
         
         return distance
 
-
     def draw_boxes(self, image, distances):
         for i in range(len(self.boxes)):
             x, y, w, h = self.boxes[i]
             color = (0, 255, 0)  # Green color for bounding box
             cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
-            cv2.putText(image, f"human {distances[i]:.2f}", (x, y + 30), cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
+            cv2.putText(image, "human", (x, y + 30), cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
         return image
 
     def detect_humans(self, image):
@@ -258,6 +274,7 @@ class ObstacleDetector:
         #self.save_image(boxes_image, "image_box_yolo.png")
         rospy.loginfo("yolo")
         self.send_human_topic(distances)
+        self.processing_image = False
 
     def stop_robot(self):
         start_time = rospy.get_time()

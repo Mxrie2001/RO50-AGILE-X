@@ -12,6 +12,14 @@ from cv_bridge import CvBridge, CvBridgeError
 
 #need to use odom_moving_turtlebot.launch with turtlebot for rviz
 
+INITIATE_FORWARD = 1
+KEEP_FORWARD = 2
+INITIATE_TURN = 3
+KEEP_TURN = 4
+SLOWING_DOWN = 5
+STOP_FOR_PEDESTRIAN = 6
+EMERGENCY_STOP = 7
+
 class PIDController:
     def __init__(self, Kp, Ki, Kd):
         self.Kp = Kp
@@ -27,17 +35,40 @@ class PIDController:
         self.prev_error = error
         return output
 
+class StateMachine() :
+
+    def __init__(self) -> None:
+        self.state = INITIATE_FORWARD
+        # Transition dictionary
+        self.transitions = {
+            INITIATE_FORWARD: [KEEP_FORWARD, EMERGENCY_STOP],
+            KEEP_FORWARD: [KEEP_FORWARD, INITIATE_TURN, SLOWING_DOWN, STOP_FOR_PEDESTRIAN, EMERGENCY_STOP],
+            INITIATE_TURN: [KEEP_TURN],
+            KEEP_TURN: [KEEP_TURN],
+            SLOWING_DOWN: [STOP_FOR_PEDESTRIAN, INITIATE_FORWARD, EMERGENCY_STOP],
+            STOP_FOR_PEDESTRIAN: [INITIATE_FORWARD, EMERGENCY_STOP],
+            EMERGENCY_STOP: []
+        }
+
+    def switch_state(self, new_state):
+        # Check if the new state is accessible in the transitions
+        if new_state in self.transitions[self.state]:
+            self.state = new_state
+        else:
+            print(f"Cannot switch to state {new_state} from {self.state}")
+
 class Odom:
     def __init__(self):
 
         self.rate = rospy.Rate(10)  # 10 Hz
         self.bridge = CvBridge()
 
-        self.step_ = 1
+        self.state_machine = StateMachine()
         self.error = 0
         self.odom_msg_old_ = None
         self.twist_msg_ = Twist()
         self.frame_without_human = 0
+        self.lidar_frame_without_human = 0
 
         # Publishers
         self.moving_pub_ = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
@@ -48,6 +79,7 @@ class Odom:
         rospy.Subscriber('/emergency_brake_reason', String, self.emergencyBrakeReasonCallback) #reason subscriber
         rospy.Subscriber("/human_distances", Float32MultiArray, self.humanCallback)
         rospy.Subscriber("/lidar_detection", Float32MultiArray, self.lidarCallback)
+        rospy.Subscriber("/lidar_pedestrian_stop", Int32, self.lidarPedeCallback)
         
         #rospy.Subscriber("/camera/color/image_raw", Image, self.image_callback)
 
@@ -56,24 +88,24 @@ class Odom:
         self.rate.sleep()
     
     def odomCallback(self, odom_msg):  
-        if self.step_ == 1:
+        if self.state_machine.state == INITIATE_FORWARD:
             self.odom_msg_old_ = odom_msg
             self.twist_msg_.linear.x = 0.4
             self.moving_pub_.publish(self.twist_msg_)
-            self.step_ = 2
-        elif self.step_ == 2:  # forward
+            self.state_machine.switch_state(KEEP_FORWARD)
+        elif self.state_machine.state == KEEP_FORWARD:  # forward
             dist_ = odom_msg.twist.twist.linear.x * (odom_msg.header.stamp.to_sec() - self.odom_msg_old_.header.stamp.to_sec())
             self.moving_pub_.publish(self.twist_msg_)
             if dist_ >= 6.5:
                 self.twist_msg_.linear.x = 0.0
                 self.moving_pub_.publish(self.twist_msg_)
-                self.step_ = 3
-        elif self.step_ == 3:
+                self.state_machine.switch_state(INITIATE_TURN)
+        elif self.state_machine.state == INITIATE_TURN:
             self.odom_msg_old_ = odom_msg
             self.twist_msg_.angular.z = 0.2
             self.moving_pub_.publish(self.twist_msg_)
-            self.step_ = 4
-        elif self.step_ == 4:  # turn
+            self.state_machine.switch_state(KEEP_TURN)
+        elif self.state_machine.state == KEEP_TURN:  # turn
             current_time = rospy.Time.now().to_sec()
             previous_time = self.odom_msg_old_.header.stamp.to_sec()
             dt = current_time - previous_time
@@ -84,16 +116,20 @@ class Odom:
                 rospy.loginfo(angle_)
                 self.twist_msg_.angular.z = 0
                 self.moving_pub_.publish(self.twist_msg_)
-                self.step_ = 1
+                self.state_machine.switch_state(INITIATE_FORWARD)
                 return
             self.moving_pub_.publish(self.twist_msg_)
             pid_output = self.pid_controller.calculate(self.error, dt)
             self.twist_msg_.angular.z = pid_output
-        elif self.step_ == 5:
+        elif self.state_machine.state == SLOWING_DOWN:
             self.twist_msg_.linear.x = 0.2
             self.moving_pub_.publish(self.twist_msg_)
-        elif self.step_ == 6:
+        elif self.state_machine.state == STOP_FOR_PEDESTRIAN:
             self.twist_msg_.linear.x = 0.0
+            self.moving_pub_.publish(self.twist_msg_)
+        elif self.state_machine.state == EMERGENCY_STOP:
+            self.twist_msg_.linear.x = 0.0
+            self.twist_msg_.angular.z = 0.0
             self.moving_pub_.publish(self.twist_msg_)
 
     #trigger callback
@@ -104,42 +140,47 @@ class Odom:
             self.twist_msg_.linear.x = 0.0
             self.twist_msg_.angular.z = 0.0
             self.moving_pub_.publish(self.twist_msg_)
-            self.step_ = 7
+            self.state_machine.switch_state(EMERGENCY_STOP)
 
     #reason callback
     def emergencyBrakeReasonCallback(self, msg):
         emergency_brake_reason_ = msg.data
         rospy.loginfo("Braking reason: %s", emergency_brake_reason_)
     
-    def humanCallback(self, msg):
-        if(self.step_ == 3 and self.step_ == 4):
-            return
-        
+    def humanCallback(self, msg):       
         if(len(msg.data) > 0):
             self.frame_without_human = 0
             mini = min(msg.data)
             if mini <= 2:
-                self.step_ = 6
+                self.state_machine.switch_state(STOP_FOR_PEDESTRIAN)
         else:
             self.frame_without_human += 1
-            if(self.frame_without_human > 4):
-                self.step_ = 1
+            if self.frame_without_human > 4:
+                self.state_machine.switch_state(INITIATE_FORWARD)
     
     def lidarCallback(self, msg):
-        if(self.step_ == 3 and self.step_ == 4):
-            return
-        
         if(len(msg.data) > 0):
             self.frame_without_human = 0
             mini = min(msg.data)
             if mini <= 4 and mini > 2:
-                self.step_ = 5
+                self.state_machine.switch_state(SLOWING_DOWN)
             elif mini <= 2:
-                self.step_ = 6
+                self.state_machine.switch_state(STOP_FOR_PEDESTRIAN)
         else:
             self.frame_without_human += 1
             if(self.frame_without_human > 4):
-                self.step_ = 1
+                self.state_machine.switch_state(INITIATE_FORWARD)
+    
+    def lidarPedeCallback(self, msg):
+        if msg.data != 0:
+            self.lidar_frame_without_human = 0
+            self.state_machine.switch_state(STOP_FOR_PEDESTRIAN)
+        else:
+            self.lidar_frame_without_human += 1
+            if self.lidar_frame_without_human > 4 :
+                self.state_machine.switch_state(INITIATE_FORWARD)
+
+
  
     # def image_callback(self, color_data):
     #     if(self.step_ == 0):
