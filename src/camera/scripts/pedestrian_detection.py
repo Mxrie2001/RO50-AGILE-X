@@ -40,20 +40,23 @@ class ObstacleDetector:
 
         self.processing_thread = None
 
-        self.tf_listener = TransformListener()
+        # self.tf_listener = TransformListener()
         self.lidar_pub = rospy.Publisher('/human_distances', Float32MultiArray, queue_size=1)
-
-        # Use message_filters to subscribe to color and depth image topics
-        self.image_sub = Subscriber("/camera/color/image_raw", Image)
-        self.depth_sub = Subscriber("/camera/depth/image_rect_raw", Image)
-        self.lidar_sub = Subscriber("/scan", LaserScan)
-
-        # Use ApproximateTimeSynchronizer to sync the messages
-        self.ts = ApproximateTimeSynchronizer([self.image_sub, self.depth_sub, self.lidar_sub], queue_size=10, slop=0.1)
-        self.ts.registerCallback(self.synced_callback)
-
         self.cmd_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         self.brake_pub = rospy.Publisher('/emergency_brake', Int32, queue_size=1)
+
+        self.lidar_sub = rospy.Subscriber('/scan', LaserScan, self.process_lidar)
+
+        # # Use message_filters to subscribe to color and depth image topics
+        # self.image_sub = Subscriber("/camera/color/image_raw", Image)
+        # self.depth_sub = Subscriber("/camera/depth/image_rect_raw", Image)
+        # self.lidar_sub = Subscriber("/scan", LaserScan)
+
+        # # Use ApproximateTimeSynchronizer to sync the messages
+        # self.ts = ApproximateTimeSynchronizer([self.image_sub, self.depth_sub, self.lidar_sub], queue_size=10, slop=0.1)
+        # self.ts.registerCallback(self.synced_callback)
+
+        # old publishers
         # self.human_pub = rospy.Publisher('/human_distances', Float32MultiArray, queue_size=1)
         # self.lidar_pub = rospy.Publisher('/lidar_detection', Float32MultiArray, queue_size=1)
         # self.lidar_pub_2 = rospy.Publisher('/lidar_pedestrian_stop', Int32, queue_size=1)
@@ -186,104 +189,6 @@ class ObstacleDetector:
         self.lidar_pub.publish(array_msg)
         rospy.loginfo(filtered_clusters)
 
-    # def process_lidar(self, data):
-    #     ranges = np.array(data.ranges)
-    #     angle_increment = data.angle_increment
-    #     total_angles = len(ranges)
-    #     total_angle_range = 360.0  # Assuming the LiDAR covers a full 360 degrees
-
-    #     # Calculate the number of indices corresponding to 150 degrees
-    #     angle_range = 150.0
-    #     indices_range = int((angle_range / total_angle_range) * total_angles)
-
-    #     # Center the 150 degree range in front of the robot
-    #     center_index = total_angles // 2
-    #     start_index = center_index - indices_range // 2
-    #     end_index = center_index + indices_range // 2
-
-    #     # Filter the ranges to include only the desired 150 degree field of view
-    #     if start_index < 0:
-    #         filtered_ranges = np.concatenate((ranges[start_index:], ranges[:end_index]))
-    #     else:
-    #         filtered_ranges = ranges[start_index:end_index]
-    #     filtered_ranges[filtered_ranges <= 0] = 100
-
-    #     distance_threshold = 0.2  # Distance threshold for clustering in meters
-    #     target_distance = 5.0  # Target distance for pedestrian detection
-
-    #     # Check for any object within 1 meter
-    #     if np.any(filtered_ranges <= 1):
-    #         rospy.loginfo("Obstacle detected within 1 meter! Stopping the robot.")
-    #         self.stop_robot()
-    #         return  # Exit the function early to immediately stop the robot
-
-    #     clusters = self.euclidean_clustering(filtered_ranges, angle_increment, distance_threshold)
-
-    #     min_size = 3  # Minimum number of points in a cluster to be considered a pedestrian
-    #     max_size = 10  # Maximum number of points in a cluster to be considered a pedestrian
-    #     pedestrian_clusters = self.detect_pedestrians(clusters, min_size, max_size, target_distance, distance_threshold)
-
-    #     array_msg = Float32MultiArray()
-    #     distances = []
-
-    #     rospy.loginfo(len(self.distances))
-    #     rospy.loginfo(len(pedestrian_clusters))
-
-    #     for cluster in pedestrian_clusters:
-    #         mean_angle = cluster[0]
-    #         mean_distance = cluster[2]
-    #         # Directly use mean_distance without cos adjustment
-    #         for depth_distance in self.distances:
-    #             if abs(mean_distance - depth_distance) < 0.2:
-    #                 mean_distance = (mean_distance + depth_distance) / 2
-    #                 break
-    #         distances.append(mean_distance)
-
-    #     #rospy.loginfo(distances)
-
-    #     array_msg.data = distances if distances else []
-    #     self.lidar_pub.publish(array_msg)
-    #     self.rate.sleep()
-
-    # def euclidean_clustering(self, ranges, angle_increment, distance_threshold):
-    #     clusters = []
-    #     cluster = []
-
-    #     for i, range_value in enumerate(ranges):
-    #         if np.isinf(range_value):
-    #             continue
-    #         angle = (i - len(ranges) // 2) * angle_increment  # Centering the angle
-
-    #         if not cluster:
-    #             cluster.append((angle, range_value))
-    #         else:
-    #             prev_angle, prev_range = cluster[-1]
-    #             # Convert to Cartesian coordinates for distance calculation
-    #             prev_x, prev_y = prev_range * np.cos(prev_angle), prev_range * np.sin(prev_angle)
-    #             curr_x, curr_y = range_value * np.cos(angle), range_value * np.sin(angle)
-    #             euclidean_dist = np.sqrt((curr_x - prev_x) ** 2 + (curr_y - prev_y) ** 2)
-    #             if euclidean_dist < distance_threshold:
-    #                 cluster.append((angle, range_value))
-    #             else:
-    #                 clusters.append(cluster)
-    #                 cluster = [(angle, range_value)]
-
-    #     if cluster:
-    #         clusters.append(cluster)
-    #     return clusters
-
-    # def detect_pedestrians(self, clusters, min_size, max_size, target_distance, distance_threshold):
-    #     pedestrian_clusters = []
-    #     for cluster in clusters:
-    #         if min_size < len(cluster) < max_size:
-    #             angles = [point[0] for point in cluster]
-    #             distances = [point[1] for point in cluster]
-    #             mean_angle = np.mean(angles)
-    #             mean_distance = np.mean(distances)
-    #             if abs(mean_distance - target_distance) <= distance_threshold:
-    #                 pedestrian_clusters.append((mean_angle, cluster, mean_distance))
-    #     return pedestrian_clusters
-
     def detect_box_hog(self, image):
         hog = cv2.HOGDescriptor()
         hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
@@ -400,6 +305,105 @@ class ObstacleDetector:
 
         self.human_pub.publish(array_msg)
         self.rate.sleep()
+    
+    # old process_lidar()
+    # def process_lidar(self, data):
+    #     ranges = np.array(data.ranges)
+    #     angle_increment = data.angle_increment
+    #     total_angles = len(ranges)
+    #     total_angle_range = 360.0  # Assuming the LiDAR covers a full 360 degrees
+
+    #     # Calculate the number of indices corresponding to 150 degrees
+    #     angle_range = 150.0
+    #     indices_range = int((angle_range / total_angle_range) * total_angles)
+
+    #     # Center the 150 degree range in front of the robot
+    #     center_index = total_angles // 2
+    #     start_index = center_index - indices_range // 2
+    #     end_index = center_index + indices_range // 2
+
+    #     # Filter the ranges to include only the desired 150 degree field of view
+    #     if start_index < 0:
+    #         filtered_ranges = np.concatenate((ranges[start_index:], ranges[:end_index]))
+    #     else:
+    #         filtered_ranges = ranges[start_index:end_index]
+    #     filtered_ranges[filtered_ranges <= 0] = 100
+
+    #     distance_threshold = 0.2  # Distance threshold for clustering in meters
+    #     target_distance = 5.0  # Target distance for pedestrian detection
+
+    #     # Check for any object within 1 meter
+    #     if np.any(filtered_ranges <= 1):
+    #         rospy.loginfo("Obstacle detected within 1 meter! Stopping the robot.")
+    #         self.stop_robot()
+    #         return  # Exit the function early to immediately stop the robot
+
+    #     clusters = self.euclidean_clustering(filtered_ranges, angle_increment, distance_threshold)
+
+    #     min_size = 3  # Minimum number of points in a cluster to be considered a pedestrian
+    #     max_size = 10  # Maximum number of points in a cluster to be considered a pedestrian
+    #     pedestrian_clusters = self.detect_pedestrians(clusters, min_size, max_size, target_distance, distance_threshold)
+
+    #     array_msg = Float32MultiArray()
+    #     distances = []
+
+    #     rospy.loginfo(len(self.distances))
+    #     rospy.loginfo(len(pedestrian_clusters))
+
+    #     for cluster in pedestrian_clusters:
+    #         mean_angle = cluster[0]
+    #         mean_distance = cluster[2]
+    #         # Directly use mean_distance without cos adjustment
+    #         for depth_distance in self.distances:
+    #             if abs(mean_distance - depth_distance) < 0.2:
+    #                 mean_distance = (mean_distance + depth_distance) / 2
+    #                 break
+    #         distances.append(mean_distance)
+
+    #     #rospy.loginfo(distances)
+
+    #     array_msg.data = distances if distances else []
+    #     self.lidar_pub.publish(array_msg)
+    #     self.rate.sleep()
+
+    # def euclidean_clustering(self, ranges, angle_increment, distance_threshold):
+    #     clusters = []
+    #     cluster = []
+
+    #     for i, range_value in enumerate(ranges):
+    #         if np.isinf(range_value):
+    #             continue
+    #         angle = (i - len(ranges) // 2) * angle_increment  # Centering the angle
+
+    #         if not cluster:
+    #             cluster.append((angle, range_value))
+    #         else:
+    #             prev_angle, prev_range = cluster[-1]
+    #             # Convert to Cartesian coordinates for distance calculation
+    #             prev_x, prev_y = prev_range * np.cos(prev_angle), prev_range * np.sin(prev_angle)
+    #             curr_x, curr_y = range_value * np.cos(angle), range_value * np.sin(angle)
+    #             euclidean_dist = np.sqrt((curr_x - prev_x) ** 2 + (curr_y - prev_y) ** 2)
+    #             if euclidean_dist < distance_threshold:
+    #                 cluster.append((angle, range_value))
+    #             else:
+    #                 clusters.append(cluster)
+    #                 cluster = [(angle, range_value)]
+
+    #     if cluster:
+    #         clusters.append(cluster)
+    #     return clusters
+
+    # def detect_pedestrians(self, clusters, min_size, max_size, target_distance, distance_threshold):
+    #     pedestrian_clusters = []
+    #     for cluster in clusters:
+    #         if min_size < len(cluster) < max_size:
+    #             angles = [point[0] for point in cluster]
+    #             distances = [point[1] for point in cluster]
+    #             mean_angle = np.mean(angles)
+    #             mean_distance = np.mean(distances)
+    #             if abs(mean_distance - target_distance) <= distance_threshold:
+    #                 pedestrian_clusters.append((mean_angle, cluster, mean_distance))
+    #     return pedestrian_clusters
 
 if __name__ == '__main__':
     rospy.init_node('obstacle_and_pedestrian_detector', anonymous=True)

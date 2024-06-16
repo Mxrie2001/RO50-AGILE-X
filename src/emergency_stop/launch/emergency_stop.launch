@@ -1,3 +1,0 @@
-<launch>
-  <node pkg="emergency_stop" name="emergency_stop" type="emergency_stop_node.py" />
-</launch>

@@ -9,6 +9,7 @@
 # modified environment variables
 export CMAKE_PREFIX_PATH="/home/hugoc/RO50_project_ws/devel:$CMAKE_PREFIX_PATH"
 export LD_LIBRARY_PATH="/home/hugoc/RO50_project_ws/devel/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="/home/hugoc/RO50_project_ws/devel/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PWD='/home/hugoc/RO50_project_ws/build'
 export ROSLISP_PACKAGE_DIRECTORIES='/home/hugoc/RO50_project_ws/devel/share/common-lisp'
 export ROS_PACKAGE_PATH="/home/hugoc/RO50_project_ws/src:$ROS_PACKAGE_PATH"

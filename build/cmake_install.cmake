@@ -131,10 +131,8 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/hugoc/RO50_project_ws/build/gtest/cmake_install.cmake")
-  include("/home/hugoc/RO50_project_ws/build/emergency_stop/cmake_install.cmake")
   include("/home/hugoc/RO50_project_ws/build/odom_moving/cmake_install.cmake")
   include("/home/hugoc/RO50_project_ws/build/camera/cmake_install.cmake")
-  include("/home/hugoc/RO50_project_ws/build/pedestrian_detection/cmake_install.cmake")
 
 endif()
 

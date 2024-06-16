@@ -80,12 +80,12 @@ class Odom:
         # Subscribers
         rospy.Subscriber('/odom', Odometry, self.odomCallback)
         rospy.Subscriber('/emergency_brake', Int32, self.emergencyBrakeCallback) #trigger subscriber
-        # rospy.Subscriber('/emergency_brake_reason', String, self.emergencyBrakeReasonCallback) #reason subscriber
+        rospy.Subscriber("/human_distances", Float32MultiArray, self.distancesCallback)
+        
+        # old subscribers
         # rospy.Subscriber("/human_distances", Float32MultiArray, self.humanCallback)
         # rospy.Subscriber("/lidar_detection", Float32MultiArray, self.lidarCallback)
         # rospy.Subscriber("/lidar_pedestrian_stop", Int32, self.lidarPedeCallback)
-        rospy.Subscriber("/human_distances", Float32MultiArray, self.distancesCallback)
-        
         #rospy.Subscriber("/camera/color/image_raw", Image, self.image_callback)
 
         self.pid_controller = PIDController(Kp=0.6, Ki=0.2, Kd=0)  # Ajustez les coefficients PID selon vos besoins
@@ -172,11 +172,6 @@ class Odom:
 
         else:
             self.speed = 0.4
-
-    # #reason callback
-    # def emergencyBrakeReasonCallback(self, msg):
-    #     emergency_brake_reason_ = msg.data
-    #     rospy.loginfo("Braking reason: %s", emergency_brake_reason_)
     
     # def humanCallback(self, msg):       
     #     if(len(msg.data) > 0):
@@ -300,7 +295,6 @@ class Odom:
     #             self.turn_right()
     #     else:
     #         rospy.loginfo("No lines detected.")
-
 
     # def control_robot(self, mid_x, image_center_x):
     #     error = mid_x - image_center_x

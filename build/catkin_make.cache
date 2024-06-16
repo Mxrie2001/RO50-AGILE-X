@@ -1,2 +1,2 @@
-camera:emergency_stop:odom_moving:pedestrian_detection
+camera:odom_moving
 -DCATKIN_DEVEL_PREFIX=/home/hugoc/RO50_project_ws/devel -DCMAKE_INSTALL_PREFIX=/home/hugoc/RO50_project_ws/install -G Unix Makefiles
